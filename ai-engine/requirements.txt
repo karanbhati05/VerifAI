@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python
+python-multipart
+deepface
+tf-keras
+retina-face
+pytesseract
+pillow
+numpy

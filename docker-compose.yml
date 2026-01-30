@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # 1. The Database
+  mysql-db:
+    image: mysql:8.0
+    container_name: kyc-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: verifai_db
+    ports:
+      - "3307:3306" # Maps port 3307 on your PC to 3306 in Docker (to avoid conflict with your local MySQL)
+    volumes:
+      - db_data:/var/lib/mysql
+
+  # 2. The AI Brain (Python)
+  ai-engine:
+    build: ./ai-engine
+    container_name: kyc-ai
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./ai-engine/uploads:/app/uploads
+
+  # 3. The Manager (Java)
+  backend:
+    build: ./verifai-backend # Make sure this matches your folder name!
+    container_name: kyc-backend
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mysql-db
+      - ai-engine
+    environment:
+      # Tell Java to talk to the 'mysql-db' container, not 'localhost'
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/verifai_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+volumes:
+  db_data:

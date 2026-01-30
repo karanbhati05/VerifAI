@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VerifAI - e-KYC System</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 450px; text-align: center; }
+        h2 { color: #333; margin-bottom: 1.5rem; }
+
+        .form-group { margin-bottom: 1.5rem; text-align: left; border-bottom: 1px solid #eee; padding-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: bold; color: #555; }
+        input[type="file"] { width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px; }
+
+        /* Buttons */
+        .btn-primary { width: 100%; padding: 0.75rem; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 1rem; cursor: pointer; margin-top: 1rem; }
+        .btn-primary:hover { background-color: #218838; }
+
+        .btn-camera { background-color: #007bff; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; margin-bottom: 10px; }
+        .btn-camera:hover { background-color: #0056b3; }
+
+        .status { margin-top: 1rem; font-weight: bold; min-height: 20px; }
+
+        /* Camera UI */
+        #camera-container { display: none; margin-top: 10px; text-align: center; }
+        video { width: 100%; border-radius: 5px; border: 2px solid #333; }
+        canvas { display: none; } /* Hidden canvas for capturing the frame */
+
+        .ocr-box {
+            margin-top: 15px; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6;
+            border-radius: 5px; text-align: left; font-size: 12px; color: #333;
+            white-space: pre-wrap; max-height: 150px; overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>VerifAI e-KYC Upload</h2>
+
+    <div class="form-group">
+        <label>1. Upload ID Card:</label>
+        <input type="file" id="idCard" accept="image/*">
+    </div>
+
+    <div class="form-group">
+        <label>2. Selfie Verification:</label>
+
+        <div style="margin-bottom: 10px;">
+            <input type="radio" name="selfieMode" value="upload" checked onclick="toggleMode('upload')"> Upload File
+            <input type="radio" name="selfieMode" value="camera" onclick="toggleMode('camera')"> Use Camera
+        </div>
+
+        <div id="upload-mode">
+            <input type="file" id="selfie" accept="image/*">
+        </div>
+
+        <div id="camera-mode" style="display: none;">
+            <button type="button" class="btn-camera" onclick="startCamera()">📷 Start Camera</button>
+
+            <div id="camera-container">
+                <video id="video" autoplay playsinline></video>
+                <button type="button" class="btn-camera" style="background-color: #dc3545; margin-top: 5px;" onclick="capturePhoto()">🔘 Capture Photo</button>
+            </div>
+
+            <img id="captured-preview" style="display:none; width: 100%; border-radius: 5px; border: 2px solid #28a745; margin-top: 5px;">
+        </div>
+    </div>
+
+    <div id="statusMessage" class="status"></div>
+    <div id="ocrResult"></div>
+
+    <button type="button" class="btn-primary" onclick="verifyIdentity()">Verify Identity</button>
+
+    <canvas id="canvas"></canvas>
+</div>
+
+<script>
+    let capturedBlob = null; // Stores the camera photo
+    let stream = null; // Stores the webcam stream
+
+    function toggleMode(mode) {
+        const uploadDiv = document.getElementById('upload-mode');
+        const cameraDiv = document.getElementById('camera-mode');
+
+        if (mode === 'upload') {
+            uploadDiv.style.display = 'block';
+            cameraDiv.style.display = 'none';
+            stopCamera(); // Turn off camera if switching back
+            capturedBlob = null; // Reset capture
+        } else {
+            uploadDiv.style.display = 'none';
+            cameraDiv.style.display = 'block';
+        }
+    }
+
+    async function startCamera() {
+        const video = document.getElementById('video');
+        const container = document.getElementById('camera-container');
+        const preview = document.getElementById('captured-preview');
+
+        preview.style.display = 'none'; // Hide previous photo
+        container.style.display = 'block'; // Show video
+
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            video.srcObject = stream;
+        } catch (err) {
+            alert("Error accessing camera: " + err.message);
+        }
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+        }
+    }
+
+    function capturePhoto() {
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const preview = document.getElementById('captured-preview');
+        const container = document.getElementById('camera-container');
+
+        // Draw video frame to canvas
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+
+        // Convert to Blob (file-like object)
+        canvas.toBlob(blob => {
+            capturedBlob = blob;
+
+            // Show preview
+            preview.src = URL.createObjectURL(blob);
+            preview.style.display = 'block';
+
+            // Hide video & stop camera to save battery
+            container.style.display = 'none';
+            stopCamera();
+        }, 'image/jpeg');
+    }
+
+    async function verifyIdentity() {
+        // --- 1. GATHER DATA ---
+        const idCardInput = document.getElementById('idCard');
+        const selfieInput = document.getElementById('selfie');
+        const selfieMode = document.querySelector('input[name="selfieMode"]:checked').value;
+        const statusMessage = document.getElementById('statusMessage');
+        const ocrResultDiv = document.getElementById('ocrResult');
+
+        statusMessage.innerText = "";
+        ocrResultDiv.innerHTML = "";
+
+        // Check ID Card
+        if (!idCardInput.files[0]) {
+            alert("Please upload your ID Card first.");
+            return;
+        }
+
+        // Check Selfie (File vs Camera)
+        let selfieFile = null;
+        if (selfieMode === 'upload') {
+            if (!selfieInput.files[0]) {
+                alert("Please upload a selfie file.");
+                return;
+            }
+            selfieFile = selfieInput.files[0];
+        } else {
+            if (!capturedBlob) {
+                alert("Please take a photo using the camera.");
+                return;
+            }
+            // Give the blob a name so Java accepts it
+            selfieFile = new File([capturedBlob], "webcam_selfie.jpg", { type: "image/jpeg" });
+        }
+
+        // --- 2. SEND TO SERVER ---
+        const formData = new FormData();
+        formData.append("idCard", idCardInput.files[0]);
+        formData.append("selfie", selfieFile); // Sends either File or Camera Blob
+
+        statusMessage.innerText = "Analyzing... Please wait...";
+        statusMessage.style.color = "blue";
+
+        try {
+            const response = await fetch("http://localhost:8081/api/kyc/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log("Response:", data);
+
+                if (data.verificationStatus === "APPROVED") {
+                    statusMessage.innerText = "✅ Verified! Confidence: " + (data.confidenceScore * 100).toFixed(1) + "%";
+                    statusMessage.style.color = "green";
+
+                    if (data.extractedText) {
+                        const box = document.createElement("div");
+                        box.className = "ocr-box";
+                        box.innerText = "📜 ID DATA EXTRACTED:\n" + data.extractedText;
+                        ocrResultDiv.appendChild(box);
+                    }
+                } else {
+                    statusMessage.innerText = "❌ Rejected. Confidence: " + (data.confidenceScore * 100).toFixed(1) + "%";
+                    statusMessage.style.color = "red";
+                }
+            } else {
+                statusMessage.innerText = "Error: Server rejected upload.";
+                statusMessage.style.color = "red";
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            statusMessage.innerText = "Error: Could not connect to backend.";
+            statusMessage.style.color = "red";
+        }
+    }
+</script>
+</body>
+</html>
