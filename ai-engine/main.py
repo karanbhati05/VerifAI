@@ -39,7 +39,6 @@ async def verify_faces(
         # --- NEW STEP: OCR (Read Text) ---
         print("Extracting Text from ID Card...")
         extracted_text = pytesseract.image_to_string(Image.open(id_path))
-
         # Print it to the terminal so we can see if it works
         print("--- START OF TEXT ---")
         print(extracted_text)

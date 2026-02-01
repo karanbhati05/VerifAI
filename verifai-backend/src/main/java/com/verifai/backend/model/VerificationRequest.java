@@ -1,40 +1,47 @@
 package com.verifai.backend.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "verification_requests")
-@Data // Lombok automatically generates Getters/Setters
 public class VerificationRequest {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String userName;
+    // Standardized field names to match Controller
+    private String name;
     private String email;
+    private String status;
+    private double confidenceScore;
 
-    private String idCardImagePath;
-    private String selfieImagePath;
+    // We can keep these if you want to store file paths too
+    private String idCardPath;
+    private String selfiePath;
 
-    private String verificationStatus; // PENDING, APPROVED, REJECTED
-    private Double confidenceScore;
+    public VerificationRequest() {}
 
-    // --- NEW FIELD FOR OCR TEXT ---
-    // We use "TEXT" type because ID card data can be longer than 255 characters
-    @Column(columnDefinition = "TEXT")
-    private String extractedText;
-    // ------------------------------
+    // --- GETTERS AND SETTERS (These fix the "Cannot resolve method" errors) ---
 
-    private LocalDateTime createdAt;
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        if (this.verificationStatus == null) {
-            this.verificationStatus = "PENDING";
-        }
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; } // <--- FIXES THE ERROR
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; } // <--- FIXES THE ERROR
+
+    public double getConfidenceScore() { return confidenceScore; }
+    public void setConfidenceScore(double confidenceScore) { this.confidenceScore = confidenceScore; }
+
+    // Optional: Getters/Setters for paths if you use them
+    public String getIdCardPath() { return idCardPath; }
+    public void setIdCardPath(String idCardPath) { this.idCardPath = idCardPath; }
+
+    public String getSelfiePath() { return selfiePath; }
+    public void setSelfiePath(String selfiePath) { this.selfiePath = selfiePath; }
 }

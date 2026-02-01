@@ -3,220 +3,196 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VerifAI - e-KYC System</title>
+    <title>VerifAI | Identity Verification System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 450px; text-align: center; }
-        h2 { color: #333; margin-bottom: 1.5rem; }
-
-        .form-group { margin-bottom: 1.5rem; text-align: left; border-bottom: 1px solid #eee; padding-bottom: 1rem; }
-        label { display: block; margin-bottom: 0.5rem; font-weight: bold; color: #555; }
-        input[type="file"] { width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px; }
-
-        /* Buttons */
-        .btn-primary { width: 100%; padding: 0.75rem; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 1rem; cursor: pointer; margin-top: 1rem; }
-        .btn-primary:hover { background-color: #218838; }
-
-        .btn-camera { background-color: #007bff; color: white; padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem; margin-bottom: 10px; }
-        .btn-camera:hover { background-color: #0056b3; }
-
-        .status { margin-top: 1rem; font-weight: bold; min-height: 20px; }
-
-        /* Camera UI */
-        #camera-container { display: none; margin-top: 10px; text-align: center; }
-        video { width: 100%; border-radius: 5px; border: 2px solid #333; }
-        canvas { display: none; } /* Hidden canvas for capturing the frame */
-
-        .ocr-box {
-            margin-top: 15px; padding: 10px; background-color: #f8f9fa; border: 1px solid #dee2e6;
-            border-radius: 5px; text-align: left; font-size: 12px; color: #333;
-            white-space: pre-wrap; max-height: 150px; overflow-y: auto;
-        }
+        :root { --primary: #2563eb; --primary-hover: #1d4ed8; --bg: #f8fafc; --card-bg: #ffffff; --text-main: #1e293b; --success: #10b981; --error: #ef4444; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 900px; background: var(--card-bg); border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; }
+        .header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { margin: 0; font-size: 1.8rem; }
+        .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; padding: 30px; }
+        .card { background: #f1f5f9; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .card h3 { margin-top: 0; color: var(--primary); }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: #cbd5e1; color: #334155; }
+        input[type="file"], input[type="text"], input[type="email"] { width: 100%; padding: 10px; background: white; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        #video-container { width: 100%; height: 250px; background: #000; border-radius: 8px; overflow: hidden; position: relative; }
+        video, canvas { width: 100%; height: 100%; object-fit: cover; }
+        #result-section { display: none; margin: 0 30px 30px; padding: 20px; border-radius: 12px; background: #ecfdf5; border: 1px solid #a7f3d0; }
+        .result-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .status-badge { padding: 5px 12px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; }
+        .status-success { background: #10b981; color: white; }
+        .status-fail { background: #ef4444; color: white; }
+        .data-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #d1fae5; }
+        .loader { display: none; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>VerifAI e-KYC Upload</h2>
-
-    <div class="form-group">
-        <label>1. Upload ID Card:</label>
-        <input type="file" id="idCard" accept="image/*">
+    <div class="header">
+        <h1>🛡️ VerifAI</h1>
+        <p>Secure Identity Verification System</p>
     </div>
 
-    <div class="form-group">
-        <label>2. Selfie Verification:</label>
+    <div class="main-grid">
+        <div class="card">
+            <h3>📝 User Details</h3>
 
-        <div style="margin-bottom: 10px;">
-            <input type="radio" name="selfieMode" value="upload" checked onclick="toggleMode('upload')"> Upload File
-            <input type="radio" name="selfieMode" value="camera" onclick="toggleMode('camera')"> Use Camera
+            <label><b>Full Name (As on ID)</b></label>
+            <input type="text" id="user-name" placeholder="Ex: Karan Bhati">
+
+            <label><b>Email Address</b></label>
+            <input type="email" id="user-email" placeholder="Ex: karan@example.com">
+
+            <h3 style="margin-top: 20px;">📂 Upload Documents</h3>
+            <label>1. ID Card</label>
+            <input type="file" id="id-card-input" accept="image/*">
+
+            <label>2. Your Photo</label>
+            <input type="file" id="user-photo-input" accept="image/*">
+
+            <button class="btn btn-primary" onclick="handleVerify('upload')">Verify Identity</button>
         </div>
 
-        <div id="upload-mode">
-            <input type="file" id="selfie" accept="image/*">
-        </div>
-
-        <div id="camera-mode" style="display: none;">
-            <button type="button" class="btn-camera" onclick="startCamera()">📷 Start Camera</button>
-
-            <div id="camera-container">
-                <video id="video" autoplay playsinline></video>
-                <button type="button" class="btn-camera" style="background-color: #dc3545; margin-top: 5px;" onclick="capturePhoto()">🔘 Capture Photo</button>
+        <div class="card">
+            <h3>📸 Live Camera</h3>
+            <div id="video-container">
+                <video id="webcam" autoplay playsinline></video>
+                <canvas id="canvas" style="display:none;"></canvas>
             </div>
-
-            <img id="captured-preview" style="display:none; width: 100%; border-radius: 5px; border: 2px solid #28a745; margin-top: 5px;">
+            <button class="btn btn-secondary" id="start-cam-btn" onclick="startCamera()">Start Camera</button>
+            <button class="btn btn-primary" id="snap-btn" onclick="takeSnapshot()" style="display:none;">📸 Snap & Verify</button>
         </div>
     </div>
 
-    <div id="statusMessage" class="status"></div>
-    <div id="ocrResult"></div>
+    <div class="loader" id="loader"></div>
 
-    <button type="button" class="btn-primary" onclick="verifyIdentity()">Verify Identity</button>
-
-    <canvas id="canvas"></canvas>
+    <div id="result-section">
+        <div class="result-header">
+            <h2 style="margin:0; color: #065f46;">Verification Result</h2>
+            <span class="status-badge status-success" id="status-badge">PASSED</span>
+        </div>
+        <div class="data-row">
+            <span>Confidence Score:</span>
+            <span style="font-weight:bold" id="score-val">--</span>
+        </div>
+        <div class="data-row">
+            <span>Name Match:</span>
+            <span style="font-weight:bold" id="name-match-val">--</span>
+        </div>
+        <div id="ocr-content" style="margin-top:10px; font-size:0.85rem; color:#047857; white-space: pre-wrap;"></div>
+    </div>
 </div>
 
 <script>
-    let capturedBlob = null; // Stores the camera photo
-    let stream = null; // Stores the webcam stream
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    const snapBtn = document.getElementById('snap-btn');
+    const startBtn = document.getElementById('start-cam-btn');
+    const resultSection = document.getElementById('result-section');
+    const loader = document.getElementById('loader');
 
-    function toggleMode(mode) {
-        const uploadDiv = document.getElementById('upload-mode');
-        const cameraDiv = document.getElementById('camera-mode');
-
-        if (mode === 'upload') {
-            uploadDiv.style.display = 'block';
-            cameraDiv.style.display = 'none';
-            stopCamera(); // Turn off camera if switching back
-            capturedBlob = null; // Reset capture
-        } else {
-            uploadDiv.style.display = 'none';
-            cameraDiv.style.display = 'block';
-        }
-    }
+    let stream = null;
 
     async function startCamera() {
-        const video = document.getElementById('video');
-        const container = document.getElementById('camera-container');
-        const preview = document.getElementById('captured-preview');
-
-        preview.style.display = 'none'; // Hide previous photo
-        container.style.display = 'block'; // Show video
-
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
             video.srcObject = stream;
-        } catch (err) {
-            alert("Error accessing camera: " + err.message);
-        }
+            startBtn.style.display = 'none';
+            snapBtn.style.display = 'block';
+        } catch (err) { alert("Error accessing camera: " + err); }
+    }
+
+    function takeSnapshot() {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => { handleVerify('camera', blob); stopCamera(); }, 'image/jpeg');
     }
 
     function stopCamera() {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            stream = null;
-        }
+        if (stream) { stream.getTracks().forEach(track => track.stop()); video.srcObject = null; }
     }
 
-    function capturePhoto() {
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const preview = document.getElementById('captured-preview');
-        const container = document.getElementById('camera-container');
+    async function handleVerify(source, cameraBlob = null) {
+        loader.style.display = 'block';
+        resultSection.style.display = 'none';
 
-        // Draw video frame to canvas
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
+        const nameVal = document.getElementById('user-name').value;
+        const emailVal = document.getElementById('user-email').value;
 
-        // Convert to Blob (file-like object)
-        canvas.toBlob(blob => {
-            capturedBlob = blob;
-
-            // Show preview
-            preview.src = URL.createObjectURL(blob);
-            preview.style.display = 'block';
-
-            // Hide video & stop camera to save battery
-            container.style.display = 'none';
-            stopCamera();
-        }, 'image/jpeg');
-    }
-
-    async function verifyIdentity() {
-        // --- 1. GATHER DATA ---
-        const idCardInput = document.getElementById('idCard');
-        const selfieInput = document.getElementById('selfie');
-        const selfieMode = document.querySelector('input[name="selfieMode"]:checked').value;
-        const statusMessage = document.getElementById('statusMessage');
-        const ocrResultDiv = document.getElementById('ocrResult');
-
-        statusMessage.innerText = "";
-        ocrResultDiv.innerHTML = "";
-
-        // Check ID Card
-        if (!idCardInput.files[0]) {
-            alert("Please upload your ID Card first.");
+        if (!nameVal || !emailVal) {
+            alert("Please enter Name and Email!");
+            loader.style.display = 'none';
             return;
         }
 
-        // Check Selfie (File vs Camera)
-        let selfieFile = null;
-        if (selfieMode === 'upload') {
-            if (!selfieInput.files[0]) {
-                alert("Please upload a selfie file.");
-                return;
-            }
-            selfieFile = selfieInput.files[0];
-        } else {
-            if (!capturedBlob) {
-                alert("Please take a photo using the camera.");
-                return;
-            }
-            // Give the blob a name so Java accepts it
-            selfieFile = new File([capturedBlob], "webcam_selfie.jpg", { type: "image/jpeg" });
+        const formData = new FormData();
+        formData.append('name', nameVal);
+        formData.append('email', emailVal);
+
+        const idInput = document.getElementById('id-card-input');
+        if (!idInput || !idInput.files[0]) {
+            alert("⚠️ Please select an ID Card (left box)!");
+            loader.style.display = 'none';
+            return;
+        }
+        formData.append('idCard', idInput.files[0]);
+
+        if (source === 'upload') {
+            const faceInput = document.getElementById('user-photo-input');
+            if (!faceInput || !faceInput.files[0]) { alert("Please select your photo!"); loader.style.display = 'none'; return; }
+            formData.append('selfie', faceInput.files[0]);
+        } else if (source === 'camera') {
+            if (!cameraBlob) { alert("Camera error."); return; }
+            formData.append('selfie', cameraBlob, "camera-snap.jpg");
         }
 
-        // --- 2. SEND TO SERVER ---
-        const formData = new FormData();
-        formData.append("idCard", idCardInput.files[0]);
-        formData.append("selfie", selfieFile); // Sends either File or Camera Blob
-
-        statusMessage.innerText = "Analyzing... Please wait...";
-        statusMessage.style.color = "blue";
-
         try {
-            const response = await fetch("http://localhost:8081/api/kyc/upload", {
-                method: "POST",
-                body: formData
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log("Response:", data);
-
-                if (data.verificationStatus === "APPROVED") {
-                    statusMessage.innerText = "✅ Verified! Confidence: " + (data.confidenceScore * 100).toFixed(1) + "%";
-                    statusMessage.style.color = "green";
-
-                    if (data.extractedText) {
-                        const box = document.createElement("div");
-                        box.className = "ocr-box";
-                        box.innerText = "📜 ID DATA EXTRACTED:\n" + data.extractedText;
-                        ocrResultDiv.appendChild(box);
-                    }
-                } else {
-                    statusMessage.innerText = "❌ Rejected. Confidence: " + (data.confidenceScore * 100).toFixed(1) + "%";
-                    statusMessage.style.color = "red";
-                }
-            } else {
-                statusMessage.innerText = "Error: Server rejected upload.";
-                statusMessage.style.color = "red";
-            }
+            const response = await fetch('http://localhost:8081/api/kyc/upload', { method: 'POST', body: formData });
+            if (!response.ok) throw new Error(await response.text());
+            const data = await response.json();
+            displayResults(data);
         } catch (error) {
-            console.error("Error:", error);
-            statusMessage.innerText = "Error: Could not connect to backend.";
-            statusMessage.style.color = "red";
+            alert("Verification Failed: " + error.message);
+        } finally {
+            loader.style.display = 'none';
+        }
+    }
+
+    function displayResults(data) {
+        resultSection.style.display = 'block';
+        const badge = document.getElementById('status-badge');
+
+        let score = data.confidenceScore ? (data.confidenceScore * 100).toFixed(1) : data.confidence;
+        document.getElementById('score-val').innerText = score + "%";
+
+        // Handle Logic for Name Match Display
+        const nameMatchText = data.nameMatch ? "✅ MATCHED" : "❌ MISMATCH";
+        document.getElementById('name-match-val').innerText = nameMatchText;
+
+        const isApproved = (data.verificationStatus === "APPROVED");
+
+        if (isApproved) {
+            badge.innerText = "VERIFIED";
+            badge.className = "status-badge status-success";
+            resultSection.style.backgroundColor = "#ecfdf5";
+            resultSection.style.borderColor = "#a7f3d0";
+        } else {
+            badge.innerText = "REJECTED";
+            badge.className = "status-badge status-fail";
+            resultSection.style.backgroundColor = "#fef2f2";
+            resultSection.style.borderColor = "#fecaca";
+        }
+
+        if (data.extractedText) {
+            document.getElementById('ocr-content').innerText = "OCR Extracted:\n" + data.extractedText.substring(0, 100) + "...";
         }
     }
 </script>
