@@ -20,5 +20,13 @@ public class HealthControllerTest {
         mockMvc.perform(get("/api/health"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("VerifAI Backend is Running! Database Connection: Stable."));
+
+        mockMvc.perform(get("/health"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("VerifAI Backend is Running! Database Connection: Stable."));
+
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("VerifAI Backend is Running! Database Connection: Stable."));
     }
 }

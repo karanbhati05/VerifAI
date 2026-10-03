@@ -6,11 +6,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api")
 @CrossOrigin(origins = "*")
 public class HealthController {
 
-    @GetMapping("/health")
+    @GetMapping({"/", "/health", "/api/health"})
     public String checkHealth() {
         return "VerifAI Backend is Running! Database Connection: Stable.";
     }

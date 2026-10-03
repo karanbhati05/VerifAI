@@ -2,5 +2,5 @@
 // When deploying to Vercel, replace BACKEND_URL with your live Render backend URL:
 // e.g., "https://verifai-backend.onrender.com"
 window.APP_CONFIG = {
-    BACKEND_URL: "https://verifai-backend.onrender.com"
+    BACKEND_URL: "https://verifai-backend-0h6c.onrender.com"
 };
