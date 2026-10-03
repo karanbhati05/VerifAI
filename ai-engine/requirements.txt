@@ -1,6 +1,5 @@
 fastapi
 uvicorn
-python
 python-multipart
 deepface
 tf-keras

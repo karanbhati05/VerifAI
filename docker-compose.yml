@@ -36,6 +36,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/verifai_db
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
+      AI_ENGINE_URL: http://ai-engine:5000/verify
 
 volumes:
   db_data:

@@ -1,6 +1,7 @@
 package com.verifai.backend.service;
 
 import com.verifai.backend.dto.AiResponse; // Import the new DTO
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
@@ -26,6 +27,9 @@ public class KycService {
     private final String UPLOAD_DIR = "uploads/";
     private final RestTemplate restTemplate = new RestTemplateBuilder().build();
 
+    @Value("${ai.engine.url:http://127.0.0.1:5000/verify}")
+    private String pythonUrl;
+
     // Renamed method to match Controller
     // Changed return type from VerificationRequest -> AiResponse
     public AiResponse verifyWithAi(MultipartFile idCard, MultipartFile selfie) throws IOException {
@@ -43,8 +47,7 @@ public class KycService {
         Path selfiePath = Paths.get(UPLOAD_DIR + selfieFileName);
         Files.write(selfiePath, selfie.getBytes());
 
-        // 3. CALL PYTHON AI ENGINE
-        String pythonUrl = "http://127.0.0.1:5000/verify";
+        // 3. CALL PYTHON AI ENGINE (Configured via application.properties or AI_ENGINE_URL)
 
         try {
             // Prepare the files for sending

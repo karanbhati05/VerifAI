@@ -7,10 +7,21 @@ import shutil
 import pytesseract
 from PIL import Image
 
-# Tell Python where Tesseract is installed
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI() # (This line is already in your code)
+# Tell Python where Tesseract is installed (only override on Windows if path exists)
+if os.name == 'nt' and os.path.exists(r'C:\Program Files\Tesseract-OCR\tesseract.exe'):
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+app = FastAPI(title="VerifAI AI Engine")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Create a temp folder for processing
 UPLOAD_DIR = "temp_uploads"
@@ -45,13 +56,14 @@ async def verify_faces(
         print("--- END OF TEXT ---")
         # ---------------------------------
 
-        # 2. Run DeepFace (Existing Logic)
-        print("Analyzing Faces...")
+        # 2. Run DeepFace (uses lightweight 'opencv' by default for Render 512MB Free Tier)
+        detector = os.getenv("DETECTOR_BACKEND", "opencv")
+        print(f"Analyzing Faces using detector: {detector}...")
         result = DeepFace.verify(
             img1_path = id_path,
             img2_path = selfie_path,
             model_name = "Facenet512",
-            detector_backend = "retinaface",
+            detector_backend = detector,
             distance_metric = "cosine"
         )
 
