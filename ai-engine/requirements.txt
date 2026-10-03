@@ -7,3 +7,5 @@ retina-face
 pytesseract
 pillow
 numpy
+pytest
+httpx

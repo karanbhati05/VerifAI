@@ -131,3 +131,27 @@ If you want verification records to persist permanently across restarts:
 
 - **Render Free Tier Spin-Down**: Free tier services sleep if inactive for 15 minutes.
 - **Before presenting your demo**: Open `https://verifai-backend.onrender.com/api/health` and `https://verifai-ai-engine.onrender.com/` in your browser 1 minute before your presentation. This wakes them up so your live demo is instant and smooth!
+
+---
+
+## 🧪 Automated Testing
+
+Automated testing is configured for both the Spring Boot backend and the FastAPI AI engine:
+
+1. **Local Test Runner**:
+   ```bash
+   python test_pipeline.py
+   ```
+2. **Spring Boot Tests only**:
+   ```bash
+   cd verifai-backend
+   ./mvnw test
+   ```
+3. **Python AI Engine Tests only**:
+   ```bash
+   cd ai-engine
+   pytest tests/ -v
+   ```
+4. **CI/CD Integration**:
+   - Every `git push` automatically runs tests on GitHub Actions (`.github/workflows/test.yml`).
+
