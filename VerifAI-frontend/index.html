@@ -475,12 +475,40 @@
 
     async function startCamera() {
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+            }
+
+            // Attempt 1: Standard video request (most compatible across Windows/Mac laptops)
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            } catch (e1) {
+                console.warn("Basic video constraint failed, attempting fallback:", e1);
+                // Attempt 2: facingMode user
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                } catch (e2) {
+                    // Attempt 3: Ideal resolution constraint
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: { ideal: 640 }, height: { ideal: 480 } }
+                    });
+                }
+            }
+
             video.srcObject = stream;
+            await video.play().catch(e => console.log("Video play warning:", e));
             startBtn.style.display = 'none';
             snapBtn.style.display = 'block';
         } catch (err) {
-            alert("Error accessing camera: " + err.message);
+            console.error("Camera access error:", err);
+            if (err.name === 'NotReadableError' || (err.message && err.message.includes('Could not start video source'))) {
+                alert("⚠️ Webcam In Use / Locked:\n\nAnother app or browser tab (like Zoom, Teams, Discord, OBS, WhatsApp, or Windows Camera) is holding an exclusive lock on your webcam.\n\nFix: Close apps using the webcam, or test using the 'Upload Documents' section on the left.");
+            } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                alert("⚠️ Camera Access Denied:\n\nPlease click the tune/lock icon in your browser address bar and enable Camera access.");
+            } else {
+                alert("Error accessing camera: " + err.message);
+            }
         }
     }
 
